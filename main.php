@@ -50,7 +50,7 @@ class MarcToEprintsConverter
     {
         // Array para recolectar notas
         $notes = [];
-        $temas = [];
+        $keywords = [];
 
         // Procesar campos MARC
         foreach ($record->xpath('.//marc:datafield') as $datafield) {
@@ -75,8 +75,8 @@ class MarcToEprintsConverter
                 case '520': // Resumen
                     $this->processAbstract($datafield, $eprint);
                     break;
-                case '653': // Temas
-                    $this->collectTemas($datafield, $temas);
+                case '653': // Palabras Clave
+                    $this->collectKeywords($datafield, $keywords);
                     break;
             }
         }
@@ -86,17 +86,12 @@ class MarcToEprintsConverter
             $eprint->addChild('note', htmlspecialchars($combinedNote));
         }
 
-        // Agregar todos los subjects combinadas como un solo <subject>
-        if (!empty($temas)) {
-            $combinedTema = implode(', ', $temas);
-            $eprint->addChild('subjects', htmlspecialchars($combinedTema));
+        // Agregar todos las palabras clave combinadas como un solo <keywords>
+        if (!empty($keywords)) {
+            $combinedKeyword = implode(', ', $keywords);
+            $eprint->addChild('keywords', htmlspecialchars($combinedKeyword));
         }
-
-        // Agregar todos los resúmenes combinados como un solo <abstract>
-        if (!empty($abstracts)) {
-            $combinedAbstract = implode('. ', $abstracts) . '.';
-            $eprint->addChild('abstract', htmlspecialchars($combinedAbstract));
-        }
+        
     }
 
     private function processTitle($datafield, &$eprint)
@@ -118,11 +113,11 @@ class MarcToEprintsConverter
         }
     }
 
-    private function collectTemas($datafield, &$temas)
+    private function collectKeywords($datafield, &$keywords)
     {
-        $tema = $datafield->xpath(".//marc:subfield[@code='a']");
-        if ($tema && isset($tema[0])) {
-            $temas[] = trim((string) $tema[0]);
+        $keyword = $datafield->xpath(".//marc:subfield[@code='a']");
+        if ($keyword && isset($keyword[0])) {
+            $keywords[] = trim((string) $keyword[0]);
         }
     }
 
@@ -163,6 +158,12 @@ class MarcToEprintsConverter
         if ($facultad && isset($facultad[0])) {
             $eprint->addChild('department', htmlspecialchars(trim((string) $facultad[0])));
         }
+        $tesist = $datafield->xpath(".//marc:subfield[@code='a']");
+
+        if ($tesist && isset($tesist[0])) {
+            $eprint->addChild('thesis_type', htmlspecialchars(trim((string) $tesist[0])));
+        }
+        
     }
 
     private function processAbstract($datafield, &$eprint)
@@ -172,24 +173,6 @@ class MarcToEprintsConverter
             $eprint->addChild('abstract', htmlspecialchars(trim((string) $abstract[0])));
         }
     }
-
-/*     private function processSubjects($datafield, &$eprint)
-    {
-        // Buscar el elemento <subjects> existente, si no existe lo creamos
-        if (!isset($eprint->subjects)) {
-            $subjects = $eprint->addChild('subjects');
-        } else {
-            $subjects = $eprint->subjects;
-        }
-
-        // Obtener el tema del subcampo 'a'
-        $subject = $datafield->xpath(".//marc:subfield[@code='a']");
-        if ($subject && isset($subject[0])) {
-            // Agregar cada tema como un <item> dentro de <subjects>
-            $subjects->addChild('item', htmlspecialchars(trim((string) $subject[0])));
-        }
-    } */
-
     
 }
 
