@@ -161,9 +161,12 @@ class MarcToEprintsConverter
         $tesist = $datafield->xpath(".//marc:subfield[@code='a']");
 
         if ($tesist && isset($tesist[0])) {
-            $eprint->addChild('thesis_type', htmlspecialchars(trim((string) $tesist[0])));
+            if (str_contains($tesist[0], 'Doctorado')) {
+                $eprint->addChild('thesis_type', 'doctoral');
+            } else {
+                $eprint->addChild('thesis_type', htmlspecialchars(trim((string) $tesist[0])));    
+            }
         }
-        
     }
 
     private function processAbstract($datafield, &$eprint)
