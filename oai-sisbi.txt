@@ -1,0 +1,18 @@
+Identificador		Descripcion			Cantidad
+aaqtesis		Tesis de posgrado		78
+aaqmas			Tesis de maestria		70
+fronteras		Fronteras
+hache			Revista Hache
+iaahisto		Cuadernos de historia
+habitat			Revista Habitat Inclusivo
+tierra			Construccion con tierra
+arqueoiaa		Arqueologia Urbana
+canon			Canon
+bolfau			Boletin Fau
+trp21			TRP 21
+cora			Corazonada. Subjetividades de la forma
+contextos		Contextos
+analeseste		Anales del Instituto de Arte Americano e Investigaciones Esteticas
+mobilitas		Mobilitas
+gadu			Actas Gadu
+anales			Anales del IAA

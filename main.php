@@ -51,6 +51,8 @@ class MarcToEprintsConverter
         // Array para recolectar notas
         $notes = [];
         $keywords = [];
+        $abstractc = [];
+        $contributors =[];
 
         // Procesar campos MARC
         foreach ($record->xpath('.//marc:datafield') as $datafield) {
@@ -69,13 +71,13 @@ class MarcToEprintsConverter
                 case '500':
                     $this->collectNote($datafield, $notes); // Recolectar notas
                     break;
-                case '502': // Institucion
+                case '260': // Institucion
                     $this->processFacultad($datafield, $eprint);
                     break;        
                 case '520': // Resumen
-                    $this->processAbstract($datafield, $eprint);
+                    $this->collectAbstract($datafield, $abstractc); // Recolectar abstract
                     break;
-                case '653': // Palabras Clave
+                case '690': // Palabras Clave
                     $this->collectKeywords($datafield, $keywords);
                     break;
             }
@@ -92,6 +94,11 @@ class MarcToEprintsConverter
             $eprint->addChild('keywords', htmlspecialchars($combinedKeyword));
         }
         
+        // Agregar todos los abstract como un solo <Abstract>
+        if (!empty($abstractc)) {
+            $combinedAbstract = implode(', ', $abstractc);
+            $eprint->addChild('abstract', htmlspecialchars($combinedAbstract));
+        }
     }
 
     private function processTitle($datafield, &$eprint)
@@ -124,7 +131,8 @@ class MarcToEprintsConverter
     private function processAuthor($datafield, &$eprint)
     {
         $author = $datafield->xpath(".//marc:subfield[@code='a']");
-        if ($author && isset($author[0])) {
+        $categoria = $datafield->xpath(".//marc:subfield[@code='e']");
+        if ($author && isset($author[0]) && $categoria[0] == "author") {
             $creators = $eprint->addChild('creators');
             $item = $creators->addChild('item');
             $name = $item->addChild('name');
@@ -135,6 +143,19 @@ class MarcToEprintsConverter
             if (isset($authorName[1])) {
                 $name->addChild('given', htmlspecialchars(trim($authorName[1]))) . "\n";
             }
+        }
+        else {
+    	    $contributors = $eprint->addChild('contributors');
+    	    $item = $contributors->addChild('item');
+    	    $namec = $item->addChild('name');
+    	    $type = $item->addChild('type','contributor') . "\n";
+    	    
+    	    $contName = explode(',', trim((string) $author[0]));
+            $namec->addChild('family', htmlspecialchars(trim($contName[0]))) . "\n";
+            if (isset($contName[1])) {
+                $namec->addChild('given', htmlspecialchars(trim($contName[1]))) . "\n";
+            }
+    	    
         }
     }
 
@@ -153,7 +174,7 @@ class MarcToEprintsConverter
 
     private function processFacultad($datafield, &$eprint)
     {
-        $facultad = $datafield->xpath(".//marc:subfield[@code='c']");
+        $facultad = $datafield->xpath(".//marc:subfield[@code='b']");
         
         if ($facultad && isset($facultad[0])) {
             $eprint->addChild('department', htmlspecialchars(trim((string) $facultad[0])));
@@ -169,11 +190,12 @@ class MarcToEprintsConverter
         }
     }
 
-    private function processAbstract($datafield, &$eprint)
+    private function collectAbstract($datafield, &$abstractc)
     {
         $abstract = $datafield->xpath(".//marc:subfield[@code='a']");
         if ($abstract && isset($abstract[0])) {
-            $eprint->addChild('abstract', htmlspecialchars(trim((string) $abstract[0])));
+    	    $abstractc[] = trim((string) $abstract[0]);
+//            $eprint->addChild('abstract', htmlspecialchars(trim((string) $abstract[0])));
         }
     }
     
@@ -184,8 +206,8 @@ function main()
 {
     $converter = new MarcToEprintsConverter();
 
-    $inputFile = "tesis.xml";
-    $outputFile = "output_eprints.xml";
+    $inputFile = "tesis-maef.xml";
+    $outputFile = "eprints.xml";
 
     echo "Convirtiendo $inputFile a $outputFile...\n";
     $success = $converter->convertFile($inputFile, $outputFile);
