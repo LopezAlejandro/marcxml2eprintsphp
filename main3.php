@@ -65,15 +65,12 @@ class MarcToEprintsConverter
                 case '264': // Publicación
                     $this->processPublication($datafield, $eprint, $doc);
                     break;
-                /* case '500': // Notas
-                    $this->collectNote($datafield, $notes);
-                    break; */
                 case '260': // Institución/Facultad
                     $this->processFacultad($datafield, $eprint, $doc);
                     break;
-                case '500': //Url Oficial
-                    $this->processUrl($datafield, $eprint, $doc);   
-                    break; 
+                // case '500': //Url Oficial
+                //     $this->processUrl($datafield, $eprint, $doc);   
+                //     break; 
                 case '520': // Resumen
                     $this->collectAbstract($datafield, $abstractc);
                     break;
