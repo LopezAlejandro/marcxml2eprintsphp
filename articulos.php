@@ -60,17 +60,21 @@ class MarcToEprintsConverter
                     $this->processTitle($datafield, $eprint, $doc);
                     break;
                 case '100': // Autor y Contribuidores
+                case '700':
                     $this->processAuthor($datafield, $eprint, $doc);
                     break;
                 case '264': // Publicación
                     $this->processPublication($datafield, $eprint, $doc);
                     break;
                 case '260': // Institución/Facultad
-                    $this->processFacultad($datafield, $eprint, $doc);
+                    $this->processPublisher($datafield, $eprint, $doc);
                     break;
-                // case '500': //Url Oficial
-                //     $this->processUrl($datafield, $eprint, $doc);   
-                //     break; 
+                case '787': //Url Oficial
+                    $this->processUrl($datafield, $eprint, $doc);
+                    break;
+                case '786': //Nro y volumen
+                    $this->processNumber($datafield, $eprint, $doc);    
+                    break;
                 case '520': // Resumen
                     $this->collectAbstract($datafield, $abstractc);
                     break;
@@ -97,11 +101,11 @@ class MarcToEprintsConverter
             $abstract = $doc->createElement('abstract', htmlspecialchars(implode(', ', $abstractc)));
             $eprint->appendChild($abstract);
         }
-        $type = $doc->createElement('type', 'thesis');
+        $type = $doc->createElement('type', 'article');
         $eprint->appendChild($type);
 
-        $type_t = $doc->createElement('thesis_type', 'maestria');
-        $eprint->appendChild($type_t);
+        //        $type_t = $doc->createElement('thesis_type', 'maestria');
+//        $eprint->appendChild($type_t);
     }
 
     private function processTitle($datafield, $eprint, $doc)
@@ -121,13 +125,28 @@ class MarcToEprintsConverter
 
     private function processUrl($datafield, $eprint, $doc)
     {
-        $url_a = $datafield->xpath(".//marc:subfield[@code='a']");
+        $url_a = $datafield->xpath(".//marc:subfield[@code='n']");
 
         if ($url_a && isset($url_a[0])) {
             $urlText = trim((string) $url_a[0]);
         }
         $url = $doc->createElement('official_url', htmlspecialchars($urlText));
         $eprint->appendChild($url);
+    }
+
+    private function processNumber($datafield, $eprint, $doc)
+    {
+        $number = $datafield->xpath(".//marc:subfield[@code='n']");
+
+        if ($number && isset($number[0])) {
+            $numberText = explode(";",$number[0]);
+            $numberText2= explode(":",$numberText[1]);
+        }
+        $publication = $doc->createElement('publication', htmlspecialchars(trim($numberText[0])));
+        $eprint->appendChild($publication);
+
+        $volume = $doc->createElement('number', htmlspecialchars(trim($numberText2[0])));
+        $eprint->appendChild($volume);
     }
 
     private function collectNote($datafield, &$notes)
@@ -194,7 +213,7 @@ class MarcToEprintsConverter
     }
 
 
-    private function processPublication($datafield, $eprint, $doc)
+    /*private function processPublication($datafield, $eprint, $doc)
     {
         $publisher = $datafield->xpath(".//marc:subfield[@code='b']");
         $date = $datafield->xpath(".//marc:subfield[@code='c']");
@@ -204,33 +223,35 @@ class MarcToEprintsConverter
             $eprint->appendChild($pub);
         }
         if ($date && isset($date[0])) {
-            $dt = $doc->createElement('date', htmlspecialchars(trim((string) $date[0])));
+            $odt = date_create_from_format('Y-m-d',substr($date[0],0,-1));
+
+    // Depuración
+        echo "Procesando fecha: date='$date[0]', odt='$odt'\n";
+
+            $dt = $doc->createElement('date', htmlspecialchars(trim((string) $odt)));
             $eprint->appendChild($dt);
         }
-    }
+    }*/
 
-    private function processFacultad($datafield, $eprint, $doc)
+    private function processPublisher($datafield, $eprint, $doc)
     {
         $facultad = $datafield->xpath(".//marc:subfield[@code='b']");
+        $date = $datafield->xpath(".//marc:subfield[@code='c']");
+       
         if ($facultad && isset($facultad[0])) {
             $univ = explode('.', $facultad[0]);
-            $dept = $doc->createElement('department', htmlspecialchars(trim((string) $univ[1])));
-            $eprint->appendChild($dept);
-            $insti = $doc->createElement('institution', htmlspecialchars(trim((string) $univ[0])));
-            $eprint->appendChild($insti);
+            $editor = $doc->createElement('publisher', htmlspecialchars(trim((string) $univ[0]) . ', ' . trim((string) $univ[1])));
+            $eprint->appendChild($editor);
+//            $dept = $doc->createElement('department', htmlspecialchars(trim((string) $univ[1])));
+//            $eprint->appendChild($dept);
+//            $insti = $doc->createElement('institution', htmlspecialchars(trim((string) $univ[0])));
+//            $eprint->appendChild($insti);
         }
-
-        $tesist = $datafield->xpath(".//marc:subfield[@code='a']");
-        if ($tesist && isset($tesist[0])) {
-            $thesisType = str_contains((string) $tesist[0], 'Doctorado') ? 'doctoral' : htmlspecialchars(trim((string) $tesist[0]));
-            $thesis = $doc->createElement('thesis_type', $thesisType);
-            $eprint->appendChild($thesis);
-        }
-
-        $date = $datafield->xpath(".//marc:subfield[@code='c']");
         if ($date && isset($date[0])) {
-            $dt = $doc->createElement('date', htmlspecialchars(trim((string) $date[0])));
+            $dt = $doc->createElement('date', htmlspecialchars(substr(trim((string) $date[0]),0,-1)));
             $eprint->appendChild($dt);
+            $datet = $doc-> createElement('date_type','published');
+            $eprint->appendChild($datet);
         }
     }
 
